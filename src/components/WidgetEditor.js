@@ -6,7 +6,7 @@ import TableWidget from './TableWidget';
 import TextWidget from './TextWidget';
 
 const WidgetEditor = () => {
-  const savedWidgets = localStorage.getItem('widgets') || [];
+  const savedWidgets = localStorage.getItem('widgets') || '[]';
   const [widgets, setWidgets] = useState(savedWidgets ? JSON.parse(savedWidgets) : []);
   const [draggedItem, setDraggedItem] = useState(null);
   const [isDraggingNew, setIsDraggingNew] = useState(false);
