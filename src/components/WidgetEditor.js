@@ -1,3 +1,4 @@
+// WidgetEditor.jsx
 import { Grid, Image, Pointer, Type, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ButtonWidget from './ButtonWidget';
@@ -14,19 +15,125 @@ const WidgetEditor = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const canvasRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
-  // eslint-disable-next-line no-unused-vars
   const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0 });
-  
+  const widgetRefs = useRef({});
+  const [widgetSizes, setWidgetSizes] = useState({});
+
+  useEffect(() => {
+    localStorage.setItem('widgets', JSON.stringify(widgets));
+  }, [widgets]);
+
+  useEffect(() => {
+    const updateWidgetSizes = () => {
+      const sizes = {};
+      Object.entries(widgetRefs.current).forEach(([id, element]) => {
+        if (element) {
+          sizes[id] = {
+            width: element.offsetWidth,
+            height: element.offsetHeight
+          };
+        }
+      });
+      setWidgetSizes(sizes);
+    };
+
+    updateWidgetSizes();
+    window.addEventListener('resize', updateWidgetSizes);
+    return () => window.removeEventListener('resize', updateWidgetSizes);
+  }, [widgets]);
+
   const availableWidgets = [
     { id: 'text', type: 'Text', icon: Type },
     { id: 'button', type: 'Button', icon: Pointer },
     { id: 'table', type: 'Table', icon: Grid },
     { id: 'image', type: 'Image', icon: Image },
   ];
-  
-  useEffect(() => {
-    localStorage.setItem('widgets', JSON.stringify(widgets));
-  }, [widgets]);
+
+  const isOverlapping = (pos1, size1, pos2, size2) => {
+    const rect1 = {
+      left: pos1.x,
+      right: pos1.x + size1.width,
+      top: pos1.y,
+      bottom: pos1.y + size1.height
+    };
+
+    const rect2 = {
+      left: pos2.x,
+      right: pos2.x + size2.width,
+      top: pos2.y,
+      bottom: pos2.y + size2.height
+    };
+
+    return !(
+      rect1.right < rect2.left ||
+      rect1.left > rect2.right ||
+      rect1.bottom < rect2.top ||
+      rect1.top > rect2.bottom
+    );
+  };
+
+  const findNonOverlappingPosition = (initialX, initialY, widgetId) => {
+    if (!canvasRef.current) return { x: initialX, y: initialY };
+
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const currentSize = widgetSizes[widgetId] || { width: 100, height: 100 };
+    
+    const pxX = (initialX / 100) * canvasRect.width;
+    const pxY = (initialY / 100) * canvasRect.height;
+
+    let x = pxX;
+    let y = pxY;
+    const step = 20;
+    const maxAttempts = 100;
+    let attempt = 0;
+    let spiral = 1;
+
+    while (attempt < maxAttempts) {
+      let hasOverlap = false;
+
+      for (const widget of widgets) {
+        if (widget.id === widgetId) continue;
+
+        const otherSize = widgetSizes[widget.id] || { width: 100, height: 100 };
+        const otherPxPos = {
+          x: (widget.position.x / 100) * canvasRect.width,
+          y: (widget.position.y / 100) * canvasRect.height
+        };
+
+        if (isOverlapping(
+          { x, y },
+          currentSize,
+          otherPxPos,
+          otherSize
+        )) {
+          hasOverlap = true;
+          break;
+        }
+      }
+
+      if (!hasOverlap) {
+        return {
+          x: (x / canvasRect.width) * 100,
+          y: (y / canvasRect.height) * 100
+        };
+      }
+
+      attempt++;
+      spiral = Math.floor((attempt + 1) / 4) + 1;
+      
+      switch (attempt % 4) {
+        case 0: x = pxX + (step * spiral); break;
+        case 1: y = pxY + (step * spiral); break;
+        case 2: x = pxX - (step * spiral); break;
+        case 3: y = pxY - (step * spiral); break;
+      }
+
+      x = Math.max(0, Math.min(x, canvasRect.width - currentSize.width));
+      y = Math.max(0, Math.min(y, canvasRect.height - currentSize.height));
+    }
+
+    return { x: initialX, y: initialY };
+  };
 
   const getDefaultContent = (type) => {
     switch (type) {
@@ -45,22 +152,6 @@ const WidgetEditor = () => {
       default:
         return '';
     }
-  };
-
-  const calculatePosition = (clientX, clientY, isNew = false) => {
-    if (!canvasRef.current) return { x: 0, y: 0 };
-    
-    const canvasRect = canvasRef.current.getBoundingClientRect();
-    const scrollLeft = canvasRef.current.scrollLeft;
-    const scrollTop = canvasRef.current.scrollTop;
-
-    const x = ((clientX - canvasRect.left + scrollLeft - (isNew ? 0 : dragOffset.x)) / canvasRect.width) * 100;
-    const y = ((clientY - canvasRect.top + scrollTop - (isNew ? 0 : dragOffset.y)) / canvasRect.height) * 100;
-
-    return {
-      x: Math.max(0, Math.min(100, x)),
-      y: Math.max(0, Math.min(100, y))
-    };
   };
 
   const handleDragStart = (e, item, isNew = false) => {
@@ -82,11 +173,6 @@ const WidgetEditor = () => {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
       });
-      
-      setCurrentPosition({
-        x: item.position.x,
-        y: item.position.y
-      });
     }
   };
 
@@ -100,8 +186,14 @@ const WidgetEditor = () => {
     e.preventDefault();
     if (!isDragging || !draggedItem) return;
 
-    const newPosition = calculatePosition(e.clientX, e.clientY, isDraggingNew);
-    setCurrentPosition(newPosition);
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const scrollLeft = canvasRef.current.scrollLeft;
+    const scrollTop = canvasRef.current.scrollTop;
+
+    let x = ((e.clientX - canvasRect.left + scrollLeft - (isDraggingNew ? 0 : dragOffset.x)) / canvasRect.width) * 100;
+    let y = ((e.clientY - canvasRect.top + scrollTop - (isDraggingNew ? 0 : dragOffset.y)) / canvasRect.height) * 100;
+
+    const newPosition = findNonOverlappingPosition(x, y, draggedItem.id);
 
     if (!isDraggingNew) {
       setWidgets(widgets.map(widget =>
@@ -116,7 +208,14 @@ const WidgetEditor = () => {
     e.preventDefault();
     if (!draggedItem) return;
 
-    const position = calculatePosition(e.clientX, e.clientY, isDraggingNew);
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const scrollLeft = canvasRef.current.scrollLeft;
+    const scrollTop = canvasRef.current.scrollTop;
+
+    let x = ((e.clientX - canvasRect.left + scrollLeft - (isDraggingNew ? 0 : dragOffset.x)) / canvasRect.width) * 100;
+    let y = ((e.clientY - canvasRect.top + scrollTop - (isDraggingNew ? 0 : dragOffset.y)) / canvasRect.height) * 100;
+
+    const position = findNonOverlappingPosition(x, y, draggedItem.id);
 
     if (isDraggingNew) {
       const newWidget = {
@@ -135,30 +234,6 @@ const WidgetEditor = () => {
     handleDragEnd();
   };
 
-  const handleTouchStart = (e, item, isNew = false) => {
-    const touch = e.touches[0];
-    handleDragStart({ clientX: touch.clientX, clientY: touch.clientY }, item, isNew);
-  };
-
-  const handleTouchMove = (e) => {
-    const touch = e.touches[0];
-    handleDragOver({ 
-      preventDefault: () => {},
-      clientX: touch.clientX, 
-      clientY: touch.clientY 
-    });
-  };
-
-  const handleTouchEnd = (e) => {
-    if (!draggedItem) return;
-    const touch = e.changedTouches[0];
-    handleDrop({ 
-      preventDefault: () => {},
-      clientX: touch.clientX, 
-      clientY: touch.clientY 
-    });
-  };
-
   const handleWidgetContentChange = (id, newContent) => {
     setWidgets(widgets.map(widget => 
       widget.id === id ? { ...widget, content: newContent } : widget
@@ -168,7 +243,6 @@ const WidgetEditor = () => {
   const removeWidget = (id) => {
     setWidgets(widgets.filter(widget => widget.id !== id));
   };
-
 
   const renderWidget = (widget) => {
     const props = {
@@ -192,7 +266,6 @@ const WidgetEditor = () => {
 
   return (
     <div className="flex flex-col sm:flex-row h-screen bg-gray-100 overflow-hidden">
-      {/* Mobile Toggle Button */}
       <button
         className="sm:hidden fixed top-4 right-4 z-50 p-2 bg-white rounded shadow"
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -200,17 +273,13 @@ const WidgetEditor = () => {
         {sidebarOpen ? '×' : '☰'}
       </button>
 
-      {/* Sidebar - Only apply transition to transform property */}
       <div 
         className={`
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           fixed sm:relative sm:translate-x-0
           w-64 h-screen bg-white shadow z-40
-          overflow-y-auto
+          transition-transform duration-300 ease-in-out
         `}
-        style={{
-          transition: 'transform 0.3s ease-in-out'
-        }}
       >
         <div className="p-4">
           <h2 className="text-lg font-bold mb-4">Widgets</h2>
@@ -221,11 +290,7 @@ const WidgetEditor = () => {
                 draggable
                 onDragStart={(e) => handleDragStart(e, widget, true)}
                 onDragEnd={handleDragEnd}
-                onTouchStart={(e) => handleTouchStart(e, widget, true)}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
                 className="flex items-center p-3 bg-gray-50 rounded cursor-move hover:bg-gray-100"
-                style={{ touchAction: 'none' }}
               >
                 <widget.icon className="w-5 h-5 mr-2" />
                 {widget.type}
@@ -235,28 +300,28 @@ const WidgetEditor = () => {
         </div>
       </div>
 
-      {/* Main Canvas Area */}
       <div className="flex-1 h-screen overflow-hidden">
         <div className="h-full p-4 sm:p-8">
           <div className="flex items-baseline mb-4">
             <h2 className="text-lg font-semibold mr-1">Canvas</h2>
-            <span className="text-sm text-gray-500 hidden sm:inline">(Double click to edit the widgets)</span>
+            <span className="text-sm text-gray-500 hidden sm:inline">
+              (Double click to edit the widgets)
+            </span>
           </div>
           <div 
             ref={canvasRef}
-            className="relative h-[calc(100vh-8rem)] bg-white rounded shadow overflow-auto"
+            className="relative h-[calc(100vh-8rem)] bg-white rounded overflow-auto"
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
           >
             {widgets.map((widget) => (
               <div
                 key={widget.id}
+                ref={el => widgetRefs.current[widget.id] = el}
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = 'move';
-                  e.dataTransfer.setData('text/plain', ''); 
+                  e.dataTransfer.setData('text/plain', '');
                   const canvas = document.createElement('canvas');
                   canvas.width = 1;
                   canvas.height = 1;
@@ -264,9 +329,6 @@ const WidgetEditor = () => {
                   handleDragStart(e, widget);
                 }}
                 onDragEnd={handleDragEnd}
-                onTouchStart={(e) => handleTouchStart(e, widget)}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
                 style={{
                   position: 'absolute',
                   left: `${widget.position.x}%`,
@@ -274,12 +336,11 @@ const WidgetEditor = () => {
                   transform: 'none',
                   transition: 'none'
                 }}
-                className="group cursor-move"
+                className="group cursor-move border"
               >
                 <button
                   onClick={() => removeWidget(widget.id)}
                   className="absolute -top-2 -right-2 p-0.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 z-10"
-                  style={{ transition: 'opacity 0.2s' }}
                 >
                   <X className="h-3 w-3" />
                 </button>
