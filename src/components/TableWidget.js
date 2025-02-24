@@ -1,6 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const TableWidget = ({ content, onChange }) => {
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, rowIndex: null, cellIndex: null });
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ctrl+R to add row
@@ -30,18 +32,20 @@ const TableWidget = ({ content, onChange }) => {
       }
     };
 
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        setContextMenu({ ...contextMenu, visible: false });
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('click', handleClickOutside);
     
-    // // Set initial prompt timer
-    // const promptTimer = setTimeout(() => {
-    //   tableCommandPrompt();
-    // }, 500);
-    
-    // return () => {
-    //   window.removeEventListener('keydown', handleKeyDown);
-    //   clearTimeout(promptTimer);
-    // };
-  }, [content]);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [content, contextMenu]);
 
   const tableCommandPrompt = () => {
     const command = prompt(
@@ -156,20 +160,42 @@ const TableWidget = ({ content, onChange }) => {
     removeSpecificColumn(colIndex);
   };
 
-  const handleCellEdit = (rowIndex, cellIndex, e) => {
-    e.stopPropagation();
+  const handleCellEdit = (rowIndex, cellIndex) => {
     const newValue = prompt('Edit cell:', content[rowIndex][cellIndex]);
     if (newValue !== null) {
       const newContent = [...content];
       newContent[rowIndex][cellIndex] = newValue;
       onChange(newContent);
     }
+  };
 
-    tableCommandPrompt();
+  const handleCellContextMenu = (e, rowIndex, cellIndex) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      rowIndex,
+      cellIndex
+    });
+  };
+
+  const showCellOptionsMenu = (e, rowIndex, cellIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Position context menu at mouse position
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      rowIndex,
+      cellIndex
+    });
   };
 
   return (
-    <div className="relative" onDoubleClick={tableCommandPrompt}>
+    <div className="relative">
       <table className="w-full text-sm text-left border-collapse">
         <tbody>
           {content.map((row, rowIndex) => (
@@ -178,10 +204,8 @@ const TableWidget = ({ content, onChange }) => {
                 <td 
                   key={`${rowIndex}-${cellIndex}`} 
                   className="px-4 py-2 border"
-                  onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    handleCellEdit(rowIndex, cellIndex, e);
-                  }}
+                  onDoubleClick={(e) => showCellOptionsMenu(e, rowIndex, cellIndex)}
+                  onContextMenu={(e) => handleCellContextMenu(e, rowIndex, cellIndex)}
                 >
                   {cell || " "}
                 </td>
@@ -190,6 +214,66 @@ const TableWidget = ({ content, onChange }) => {
           ))}
         </tbody>
       </table>
+
+      {/* Context Menu */}
+      {contextMenu.visible && (
+        <div 
+          className="absolute bg-white border shadow-lg rounded-md z-50 w-48"
+          style={{ 
+            top: `0px`, 
+            left: `0px` 
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ul className="py-1">
+            <li 
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => {
+                handleCellEdit(contextMenu.rowIndex, contextMenu.cellIndex);
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Edit Cell
+            </li>
+            <li 
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => {
+                addRowViaPrompt();
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Add Row
+            </li>
+            <li 
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => {
+                removeSpecificRow(contextMenu.rowIndex);
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Delete Row
+            </li>
+            <li 
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => {
+                addColumnViaPrompt();
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Add Column
+            </li>
+            <li 
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => {
+                removeSpecificColumn(contextMenu.cellIndex);
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Delete Column
+            </li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
