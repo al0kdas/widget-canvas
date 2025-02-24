@@ -1,15 +1,50 @@
-const ImageWidget = ({ content, onChange }) => (
+const ImageWidget = ({ content, onChange }) => {
+  const handleSizeChange = () => {
+    const width = prompt('Enter width (px):', content.width);
+    const height = prompt('Enter height (px):', content.height);
+    
+    if (width && height) {
+      onChange({
+        ...content,
+        width: parseInt(width),
+        height: parseInt(height)
+      });
+    }
+  };
+
+  const handleUrlChange = () => {
+    const newUrl = prompt('Enter image URL:', content.url);
+    if (newUrl) {
+      onChange({
+        ...content,
+        url: newUrl
+      });
+    }
+  };
+
+  return (
     <div className="p-4 bg-white rounded shadow">
-      <img 
-        src={content} 
-        alt="Widget" 
-        className="max-w-full h-auto"
-        onDoubleClick={() => {
-          const newUrl = prompt('Enter image URL:', content);
-          if (newUrl) onChange(newUrl);
-        }}
-      />
+      <div className="relative">
+        <img 
+          src={content.url} 
+          alt="Widget" 
+          style={{
+            width: `${content.width}px`,
+            height: `${content.height}px`,
+            objectFit: 'cover'
+          }}
+          className="max-w-full h-auto"
+          onDoubleClick={handleUrlChange}
+        />
+        <button
+          onClick={handleSizeChange}
+          className="absolute bottom-2 right-2 px-2 py-1 bg-blue-500 text-white rounded text-sm opacity-0 group-hover:opacity-100"
+        >
+          Resize
+        </button>
+      </div>
     </div>
   );
+};
 
   export default ImageWidget;
