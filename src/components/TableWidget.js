@@ -32,15 +32,15 @@ const TableWidget = ({ content, onChange }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     
-    // Set initial prompt timer
-    const promptTimer = setTimeout(() => {
-      tableCommandPrompt();
-    }, 500);
+    // // Set initial prompt timer
+    // const promptTimer = setTimeout(() => {
+    //   tableCommandPrompt();
+    // }, 500);
     
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      clearTimeout(promptTimer);
-    };
+    // return () => {
+    //   window.removeEventListener('keydown', handleKeyDown);
+    //   clearTimeout(promptTimer);
+    // };
   }, [content]);
 
   const tableCommandPrompt = () => {
@@ -164,6 +164,8 @@ const TableWidget = ({ content, onChange }) => {
       newContent[rowIndex][cellIndex] = newValue;
       onChange(newContent);
     }
+
+    tableCommandPrompt();
   };
 
   return (
