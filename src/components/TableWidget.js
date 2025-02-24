@@ -32,15 +32,7 @@ const TableWidget = ({ content, onChange }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     
-    // Set initial prompt timer
-    const promptTimer = setTimeout(() => {
-      tableCommandPrompt();
-    }, 500);
-    
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      clearTimeout(promptTimer);
-    };
+   
   }, [content]);
 
   const tableCommandPrompt = () => {
