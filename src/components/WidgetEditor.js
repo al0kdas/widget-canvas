@@ -236,7 +236,7 @@ const WidgetEditor = () => {
         <div className="h-full p-4 sm:p-8">
           <div className="flex items-baseline mb-4">
             <h2 className="text-lg font-semibold mr-1">Canvas</h2>
-            <span className="text-sm text-gray-500 hidden sm:inline">(Drag and drop widgets anywhere)</span>
+            <span className="text-sm text-gray-500 hidden sm:inline">(Double click to edit the widgets)</span>
           </div>
           <div 
             ref={canvasRef}
