@@ -1,17 +1,21 @@
 const ImageWidget = ({ content, onChange }) => {
   const handleSizeChange = (e) => {
     e.stopPropagation();
+    
     const width = prompt("Enter width (px):", content.width);
     const height = prompt("Enter height (px):", content.height);
-
-    if (width && height) {
+  
+    if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
       onChange({
         ...content,
-        width: parseInt(width),
-        height: parseInt(height),
+        width: parseInt(width, 10),
+        height: parseInt(height, 10),
       });
+    } else {
+      alert("Please enter valid positive numbers for width and height.");
     }
   };
+  
 
   const handleUrlChange = (e) => {
     e.stopPropagation();
