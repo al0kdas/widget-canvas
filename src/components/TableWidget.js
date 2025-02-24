@@ -20,6 +20,16 @@ const TableWidget = ({ content, onChange }) => {
     onChange(newContent);
   };
 
+  const handleCellEdit = (rowIndex, cellIndex, e) => {
+    e.stopPropagation();
+    const newValue = prompt('Edit cell:', content[rowIndex][cellIndex]);
+    if (newValue !== null) {
+      const newContent = [...content];
+      newContent[rowIndex][cellIndex] = newValue;
+      onChange(newContent);
+    }
+  };
+
   return (
     <div className="p-4 bg-white rounded shadow">
       <div className="mb-4 space-x-2">
@@ -42,14 +52,7 @@ const TableWidget = ({ content, onChange }) => {
                   >
                     <div 
                       className="min-w-[100px] min-h-[30px]"
-                      onDoubleClick={() => {
-                        const newValue = prompt('Edit cell:', cell);
-                        if (newValue !== null) {
-                          const newContent = [...content];
-                          newContent[rowIndex][cellIndex] = newValue;
-                          onChange(newContent);
-                        }
-                      }}
+                      onDoubleClick={(e) => handleCellEdit(rowIndex, cellIndex, e)}
                     >
                       {cell}
                     </div>

@@ -10,9 +10,12 @@ const TextWidget = ({ content, onChange }) => {
   };
 
   return (
-    <div 
+    <div
       className="p-4 bg-white rounded shadow"
-      onDoubleClick={() => setIsEditing(true)}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        setIsEditing(true);
+      }}
     >
       {isEditing ? (
         <input
@@ -30,4 +33,4 @@ const TextWidget = ({ content, onChange }) => {
   );
 };
 
-  export default TextWidget;
+export default TextWidget;

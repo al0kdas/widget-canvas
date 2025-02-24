@@ -1,37 +1,39 @@
 const ImageWidget = ({ content, onChange }) => {
-  const handleSizeChange = () => {
-    const width = prompt('Enter width (px):', content.width);
-    const height = prompt('Enter height (px):', content.height);
-    
+  const handleSizeChange = (e) => {
+    e.stopPropagation();
+    const width = prompt("Enter width (px):", content.width);
+    const height = prompt("Enter height (px):", content.height);
+
     if (width && height) {
       onChange({
         ...content,
         width: parseInt(width),
-        height: parseInt(height)
+        height: parseInt(height),
       });
     }
   };
 
-  const handleUrlChange = () => {
-    const newUrl = prompt('Enter image URL:', content.url);
+  const handleUrlChange = (e) => {
+    e.stopPropagation();
+    const newUrl = prompt("Enter image URL:", content.url);
     if (newUrl) {
       onChange({
         ...content,
-        url: newUrl
+        url: newUrl,
       });
     }
   };
 
   return (
     <div className="p-4 bg-white rounded shadow">
-      <div className="relative">
-        <img 
-          src={content.url} 
-          alt="Widget" 
+      <div className="relative group">
+        <img
+          src={content.url}
+          alt="Widget"
           style={{
             width: `${content.width}px`,
             height: `${content.height}px`,
-            objectFit: 'cover'
+            objectFit: "cover",
           }}
           className="max-w-full h-auto"
           onDoubleClick={handleUrlChange}
@@ -47,4 +49,4 @@ const ImageWidget = ({ content, onChange }) => {
   );
 };
 
-  export default ImageWidget;
+export default ImageWidget;
