@@ -1,4 +1,3 @@
-// WidgetEditor.jsx
 import { Grid, Image, Pointer, Type, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ButtonWidget from './ButtonWidget';
