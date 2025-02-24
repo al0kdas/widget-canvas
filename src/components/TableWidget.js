@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 
 const TableWidget = ({ content, onChange }) => {
-  // Set up keyboard shortcuts and prompt detection
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ctrl+R to add row
@@ -44,7 +43,6 @@ const TableWidget = ({ content, onChange }) => {
     };
   }, [content]);
 
-  // Main command prompt function
   const tableCommandPrompt = () => {
     const command = prompt(
       "Table Commands:\n" +
