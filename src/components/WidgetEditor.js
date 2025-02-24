@@ -1,4 +1,4 @@
-import { Delete, Grid, Image, Pointer, Type } from 'lucide-react';
+import { Grid, Image, Pointer, Type, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ButtonWidget from './ButtonWidget';
 import ImageWidget from './ImageWidget';
@@ -88,15 +88,12 @@ const WidgetEditor = () => {
         y: item.position.y
       });
     }
-
-    document.body.classList.add('dragging');
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
     setDraggedItem(null);
     setIsDraggingNew(false);
-    document.body.classList.remove('dragging');
   };
 
   const handleDragOver = (e) => {
@@ -171,6 +168,8 @@ const WidgetEditor = () => {
   const removeWidget = (id) => {
     setWidgets(widgets.filter(widget => widget.id !== id));
   };
+
+
   const renderWidget = (widget) => {
     const props = {
       content: widget.content,
@@ -201,14 +200,18 @@ const WidgetEditor = () => {
         {sidebarOpen ? '×' : '☰'}
       </button>
 
-      {/* Sidebar */}
-      <div className={`
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        transform transition-transform duration-300 ease-in-out
-        fixed sm:relative sm:translate-x-0
-        w-64 h-screen bg-white shadow z-40
-        overflow-y-auto
-      `}>
+      {/* Sidebar - Only apply transition to transform property */}
+      <div 
+        className={`
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          fixed sm:relative sm:translate-x-0
+          w-64 h-screen bg-white shadow z-40
+          overflow-y-auto
+        `}
+        style={{
+          transition: 'transform 0.3s ease-in-out'
+        }}
+      >
         <div className="p-4">
           <h2 className="text-lg font-bold mb-4">Widgets</h2>
           <div className="space-y-2">
@@ -222,6 +225,7 @@ const WidgetEditor = () => {
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 className="flex items-center p-3 bg-gray-50 rounded cursor-move hover:bg-gray-100"
+                style={{ touchAction: 'none' }}
               >
                 <widget.icon className="w-5 h-5 mr-2" />
                 {widget.type}
@@ -253,25 +257,31 @@ const WidgetEditor = () => {
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = 'move';
                   e.dataTransfer.setData('text/plain', ''); 
+                  const canvas = document.createElement('canvas');
+                  canvas.width = 1;
+                  canvas.height = 1;
+                  e.dataTransfer.setDragImage(canvas, 0, 0);
                   handleDragStart(e, widget);
                 }}
                 onDragEnd={handleDragEnd}
                 onTouchStart={(e) => handleTouchStart(e, widget)}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className={`absolute group cursor-move transition-none ${
-                  isDragging && draggedItem?.id === widget.id ? 'z-50' : ''
-                }`}
                 style={{
+                  position: 'absolute',
                   left: `${widget.position.x}%`,
                   top: `${widget.position.y}%`,
+                  transform: 'none',
+                  transition: 'none'
                 }}
+                className="group cursor-move"
               >
                 <button
                   onClick={() => removeWidget(widget.id)}
-                  className={`absolute -top-2 -right-7 p-1 rounded-full opacity-0 group-hover:opacity-100 z-10 ${isDragging && draggedItem?.id === widget.id ? 'hidden' : ''}`}
+                  className="absolute -top-2 -right-2 p-0.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 z-10"
+                  style={{ transition: 'opacity 0.2s' }}
                 >
-                  <Delete></Delete>{}
+                  <X className="h-3 w-3" />
                 </button>
                 {renderWidget(widget)}
               </div>

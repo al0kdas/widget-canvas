@@ -1,4 +1,4 @@
-const { useState } = require("react");
+import { useState } from "react";
 
 const TextWidget = ({ content, onChange }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -9,17 +9,29 @@ const TextWidget = ({ content, onChange }) => {
     onChange(text);
   };
 
+  const handleDoubleClick = (e) => {
+    e.stopPropagation();
+    if (isEditing) return; // Don't show prompt if already editing in input field
+    
+    const newText = prompt('Enter new text:', content);
+    if (newText !== null) {
+      setText(newText);
+      onChange(newText);
+    }
+  };
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    setIsEditing(true);
+  };
+
   return (
     <div
-      className="p-4 bg-white rounded shadow"
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        setIsEditing(true);
-      }}
+      className="p-6 bg-white rounded shadow"
+      onDoubleClick={handleDoubleClick}
     >
       {isEditing ? (
         <input
-          type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onBlur={handleBlur}
@@ -27,7 +39,12 @@ const TextWidget = ({ content, onChange }) => {
           autoFocus
         />
       ) : (
-        <div>{content}</div>
+        <div 
+          onClick={handleClick}
+          className="w-full p-2 cursor-text"
+        >
+          {content}
+        </div>
       )}
     </div>
   );

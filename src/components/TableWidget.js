@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+
 const TableWidget = ({ content, onChange }) => {
   const addRow = () => {
     const newRow = Array(content[0].length).fill('');
@@ -40,15 +42,22 @@ const TableWidget = ({ content, onChange }) => {
           Add Column
         </button>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-visible pt-8 pr-8">
         <table className="w-full border-collapse border border-gray-300">
           <tbody>
             {content.map((row, rowIndex) => (
-              <tr key={rowIndex}>
+              <tr 
+                key={rowIndex}
+                className="group/row"
+              >
                 {row.map((cell, cellIndex) => (
                   <td 
                     key={cellIndex}
-                    className="border border-gray-300 p-2 relative"
+                    className={`
+                      border border-gray-300 p-2 relative
+                      group/cell
+                      ${rowIndex === 0 ? 'group/header' : ''}
+                    `}
                   >
                     <div 
                       className="min-w-[100px] min-h-[30px]"
@@ -59,19 +68,19 @@ const TableWidget = ({ content, onChange }) => {
                     {cellIndex === row.length - 1 && (
                       <button
                         onClick={() => removeRow(rowIndex)}
-                        className="absolute -right-8 top-1/2 transform -translate-y-1/2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                        className="absolute -right-8 top-1/2 transform -translate-y-1/2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 opacity-0 group-hover/row:opacity-100 transition-opacity"
                         title="Remove row"
                       >
-                        ×
+                        <X className="h-3 w-3" />
                       </button>
                     )}
                     {rowIndex === 0 && (
                       <button
                         onClick={() => removeColumn(cellIndex)}
-                        className="absolute -top-8 left-1/2 transform -translate-x-1/2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                        className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 opacity-0 group-hover/cell:opacity-100 group-hover/header:opacity-100 transition-opacity"
                         title="Remove column"
                       >
-                        ×
+                        <X className="h-3 w-3" />
                       </button>
                     )}
                   </td>
@@ -85,4 +94,4 @@ const TableWidget = ({ content, onChange }) => {
   );
 };
 
-  export default TableWidget;
+export default TableWidget;
