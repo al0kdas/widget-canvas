@@ -1,4 +1,4 @@
-import { Grid, Image, Pointer, Type } from 'lucide-react';
+import { Delete, Grid, Image, Pointer, Type } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ButtonWidget from './ButtonWidget';
 import ImageWidget from './ImageWidget';
@@ -250,25 +250,28 @@ const WidgetEditor = () => {
               <div
                 key={widget.id}
                 draggable
-                onDragStart={(e) => handleDragStart(e, widget)}
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = 'move';
+                  e.dataTransfer.setData('text/plain', ''); 
+                  handleDragStart(e, widget);
+                }}
                 onDragEnd={handleDragEnd}
                 onTouchStart={(e) => handleTouchStart(e, widget)}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className={`absolute group cursor-move transition-transform ${
+                className={`absolute group cursor-move transition-none ${
                   isDragging && draggedItem?.id === widget.id ? 'z-50' : ''
                 }`}
                 style={{
                   left: `${widget.position.x}%`,
                   top: `${widget.position.y}%`,
-                  transform: 'translate(-50%, -50%)'
                 }}
               >
                 <button
                   onClick={() => removeWidget(widget.id)}
-                  className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 z-10"
+                  className={`absolute -top-2 -right-7 p-1 rounded-full opacity-0 group-hover:opacity-100 z-10 ${isDragging && draggedItem?.id === widget.id ? 'hidden' : ''}`}
                 >
-                  ×
+                  <Delete></Delete>{}
                 </button>
                 {renderWidget(widget)}
               </div>
